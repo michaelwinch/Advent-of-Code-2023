@@ -1,5 +1,8 @@
+#load "./Utils.fsx"
+
 open System
 open System.IO
+open Utils
 
 let getInput (inputFile: string) =
     seq {
@@ -83,5 +86,5 @@ module Part2 =
         |> Seq.map (findFirstAndLastDigits >> convertToNumber)
         |> Seq.sum
 
-Part1.run "Inputs/Actual/Day1.txt"
-Part2.run "Inputs/Actual/Day1.txt"
+Solution.run "Part 1" Part1.run "Inputs/Actual/Day1.txt"
+Solution.run "Part 2" Part2.run "Inputs/Actual/Day1.txt"
