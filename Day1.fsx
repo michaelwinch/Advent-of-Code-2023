@@ -1,3 +1,4 @@
+#time
 #load "./Utils.fsx"
 
 open System
