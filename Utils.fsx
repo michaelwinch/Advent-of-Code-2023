@@ -1,3 +1,5 @@
+let tee f x = f x; x
+
 module Solution =
     open System.Diagnostics
 

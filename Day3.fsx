@@ -2,6 +2,7 @@
 #load "Utils.fsx"
 
 open System
+open System.Text.RegularExpressions
 open Utils
 
 let wrapEmptyLines inputFile lines =
@@ -38,12 +39,19 @@ let hasAdjacentSymbol (lines: string array) startIndex length =
 let getPartNumbers : string array -> int list =
     function
     | [| _; Regex.Matches "(\d+)" matches as currentLine; _ |] as lines ->
-        matches
-        |> Seq.filter (fun m -> hasAdjacentSymbol lines (currentLine.IndexOf m.Value) m.Value.Length)
-        |> Seq.map (fun m -> int m.Value)
-        |> List.ofSeq
-    | _ -> []
+        let rec loop acc (startPos: int) =
+            function
+            | [] -> acc
+            | m: Match :: t ->
+                let matchIndex = currentLine.IndexOf(m.Value, startPos)
+                let nextStartIndex = matchIndex + m.Value.Length
 
+                if hasAdjacentSymbol lines matchIndex m.Value.Length then
+                    loop (int m.Value :: acc) nextStartIndex t
+                else loop acc nextStartIndex t
+                
+        loop [] 0 (matches |> List.ofSeq)
+    | _ -> []
 
 let run inputFile =
     File.readStream inputFile
