@@ -21,7 +21,7 @@ let wrapEmptyLines inputFile lines =
     }
 
 let isSymbol (x: char) =
-    Regex.``match`` "[^\.\w\d]" (string x)
+    Regex.``match`` "[^\.\d]" (string x)
     |> fun x -> x[0].Success
 
 let hasAdjacentSymbol (lines: string array) startIndex length =
@@ -31,7 +31,7 @@ let hasAdjacentSymbol (lines: string array) startIndex length =
         line
         |> Array.mapi (fun idx char ->
             startIndex - 1 <= idx
-            && idx <= startIndex + length + 1
+            && idx <= startIndex + length
             && isSymbol char)
         |> Array.exists id)
 
