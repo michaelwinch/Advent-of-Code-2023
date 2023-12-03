@@ -35,3 +35,7 @@ module Regex =
     let (|Matches|_|) pattern input =
         let m = Regex.Matches(input, pattern)
         if m.Count > 0 then Some m else None
+
+    let (|MatchesAlways|_|) pattern input =
+        let m = Regex.Matches(input, pattern)
+        Some m
