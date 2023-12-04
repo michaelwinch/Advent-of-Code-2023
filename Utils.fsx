@@ -24,8 +24,14 @@ module File =
 module Regex =
     open System.Text.RegularExpressions
 
+    let test pattern input =
+        Regex.Matches(input, pattern)
+
     let ``match`` pattern input =
         Regex.Match(input, pattern).Groups
+
+    let matches pattern input =
+        Regex.Matches(input, pattern)
 
     let (|Match|_|) pattern input =
         let m = Regex.Match(input, pattern)
