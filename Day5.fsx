@@ -7,38 +7,23 @@ type MapRange =
       DestinationStart: int64
       Length: int64 }
 
-type PartialMap =
+type DestinationMap =
     { SourceName: string
       DestinationName: string
       Ranges: MapRange list }
 
-type CompleteMap =
-    { SourceName: string
-      DestinationName: string
-      Map: Map<int64, int64> }
-
-module CompleteMap =
-    let getFromMap key completeMap =
-        completeMap.Map
-        |> Map.tryFind key
+module DestinationMap =
+    let getFromMap key destinationMap =
+        destinationMap.Ranges
+        |> List.tryFind (fun x -> x.SourceStart <= key && key <= x.SourceStart + x.Length)
+        |> Option.map (fun x -> (key - x.SourceStart) + x.DestinationStart)
         |> Option.defaultValue key
-        |> fun value -> completeMap.DestinationName, value
-
-    let ofPartialMap (partialMap: PartialMap) : CompleteMap =
-        { SourceName = partialMap.SourceName
-          DestinationName = partialMap.DestinationName
-          Map =
-            partialMap.Ranges
-            |> List.collect (fun range ->
-                List.zip
-                    [range.SourceStart .. range.SourceStart + range.Length]
-                    [range.DestinationStart .. range.DestinationStart + range.Length])
-            |> Map }
+        |> fun value -> destinationMap.DestinationName, value
 
 type ParseAcc =
     { Seeds: int64 list
-      PartialMap: PartialMap option
-      CompletedMaps: PartialMap list }
+      PartialMap: DestinationMap option
+      CompletedMaps: DestinationMap list }
 
 module ParseAcc =
     let empty =
@@ -94,28 +79,27 @@ let rec parseLines (acc: ParseAcc) =
 
 
 module Part1 =
-    let rec searchMaps (maps: Map<string, CompleteMap>) name value =
+    let rec searchMaps (maps: Map<string, DestinationMap>) name value =
         match Map.tryFind name maps with
         | None -> value
         | Some map ->
-            let destinationName, value = CompleteMap.getFromMap value map
+            let destinationName, value = DestinationMap.getFromMap value map
             searchMaps maps destinationName value
 
     let run inputFile =
-        let { Seeds = seeds; CompletedMaps = partialMaps } =
+        let { Seeds = seeds; CompletedMaps = maps } =
             File.readStream inputFile
             |> List.ofSeq
             |> parseLines ParseAcc.empty
 
-        let completedMaps =
-            partialMaps
-            |> List.map CompleteMap.ofPartialMap
+        let maps =
+            maps
             |> List.map (fun x -> x.SourceName, x)
             |> Map
 
         seeds
-        |> List.map (searchMaps completedMaps "seed")
+        |> List.map (searchMaps maps "seed")
         |> List.min
 
 
-Solution.run "pt1" Part1.run "Inputs/Actual/Day5.txt"
+Solution.run "pt1" Part1.run "Inputs/Actual/Day5.txt" // pt1 completed in 4ms with result: 107430936
