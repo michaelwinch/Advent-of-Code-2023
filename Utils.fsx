@@ -21,11 +21,15 @@ module File =
         }
 
 
+module String =
+    open System
+
+    let (|IsNullOrWhitespace|_|) (x: string) =
+        if String.IsNullOrWhiteSpace x then Some () else None
+
+
 module Regex =
     open System.Text.RegularExpressions
-
-    let test pattern input =
-        Regex.Matches(input, pattern)
 
     let ``match`` pattern input =
         Regex.Match(input, pattern).Groups
