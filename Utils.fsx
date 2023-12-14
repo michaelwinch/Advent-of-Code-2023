@@ -1,5 +1,8 @@
 let tee f x = f x; x
 
+let log x = printfn "LOG: %A" x
+let logm m x = printfn "%s: %A" m x
+
 module Solution =
     open System.Diagnostics
 
@@ -26,6 +29,19 @@ module String =
 
     let (|IsNullOrWhitespace|_|) (x: string) =
         if String.IsNullOrWhiteSpace x then Some () else None
+
+
+module Maths =
+    let highestCommonFactor x y =
+        let lower, higher = if x < y then x, y else y, x
+        let rec loop lower higher =
+            if lower = 0L then higher
+            else
+                loop (higher % lower) lower
+        loop lower higher
+
+    let lowestCommonMultiple x y =
+        x * y / highestCommonFactor x y
 
 
 module Regex =
