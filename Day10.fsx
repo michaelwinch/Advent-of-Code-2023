@@ -9,43 +9,6 @@ type Move =
     | Left
     | Up
 
-type Array2D<'a> = private Array2D of 'a array array
-
-module Array2D =
-    let init yLength xLength initialiser =
-        [ 0 .. yLength - 1 ]
-        |> List.map (fun y -> Array.init xLength (initialiser y))
-        |> List.toArray
-        |> Array2D
-
-    let create (x: _ array array) =
-        if x.Length = 0 || x |> Array.forall (_.Length >> (=) x[0].Length) then
-            Array2D x
-        else
-            failwith "input array is jagged"
-
-    let get y x (Array2D array) =
-        array[y][x]
-
-    let set  (Array2D array) y x value =
-        Array.set array[y] x value
-
-    let find predicate (Array2D array) =
-        let y = Array.findIndex (Array.exists predicate) array
-        let x = Array.findIndex predicate array[y]
-        y, x
-
-    let lengthY (Array2D array) =
-        array.Length
-
-    let lengthX (Array2D array) =
-        array[0].Length
-
-    let log (formatter: _ -> string) (Array2D array) =
-        Array.map (Array.map formatter >> String.concat "") array
-        |> Array.iter (printfn "%s")
-            
-
 let getInput inputFile =
     File.readStream inputFile
     |> Array.ofSeq
@@ -95,7 +58,7 @@ let getNextMove (currentMove, (y, x)) currentValue =
     newMove, newCoords
 
 let getLoopLength (map: char Array2D) =
-    let start = map |> Array2D.find ((=) 'S')
+    let start = map |> Array2D.findIndex ((=) 'S')
     let firstMove = getFirstMove start map
     
     let rec loop moves (_, (y, x) as currentAction) =
@@ -122,7 +85,7 @@ module Part2 =
     let getPipeLoopMap map =
         let pipeLoopMap = Array2D.init (Array2D.lengthY map) (Array2D.lengthX map) (fun _ _ -> false)
 
-        let start = map |> Array2D.find ((=) 'S')
+        let start = map |> Array2D.findIndex ((=) 'S')
 
         let firstMove = getFirstMove start map
     

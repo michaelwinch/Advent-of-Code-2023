@@ -65,3 +65,95 @@ module Regex =
     let (|MatchesAlways|_|) pattern input =
         let m = Regex.Matches(input, pattern)
         Some m
+
+
+type Array2D<'a> = private Array2D of 'a array array
+
+module Array2D =
+    let init yLength xLength initialiser =
+        [ 0 .. yLength - 1 ]
+        |> List.map (fun y -> Array.init xLength (initialiser y))
+        |> List.toArray
+        |> Array2D
+
+    let create (x: _ array array) =
+        if x.Length = 0 || x |> Array.forall (_.Length >> (=) x[0].Length) then
+            Array2D x
+        else
+            failwith "input array is jagged"
+
+    let get y x (Array2D array) =
+        array[y][x]
+
+    let set (Array2D array) y x value =
+        Array.set array[y] x value
+
+    let findIndex predicate (Array2D array) =
+        let y = Array.findIndex (Array.exists predicate) array
+        let x = Array.findIndex predicate array[y]
+        y, x
+
+    let lengthY (Array2D array) =
+        array.Length
+
+    let lengthX (Array2D array) =
+        array[0].Length
+
+    let log (formatter: _ -> string) (Array2D array) =
+        Array.map (Array.map formatter >> String.concat "") array
+        |> Array.iter (printfn "%s")
+
+
+module List =
+    let getUniquePairs (xs: _ list) =
+        let rec loop acc =
+            function
+            | [] -> acc
+            | h :: t ->
+                let newPairs = t |> List.map (fun t -> h, t)
+                loop (newPairs @ acc) t
+
+        loop [] xs
+
+
+type List2D<'a> = 'a list list
+
+module List2D =
+    let create (x: _ list list) : _ List2D =
+        if x.Length = 0 || x |> List.forall (_.Length >> (=) x[0].Length) then
+            x
+        else
+            failwith "input list is jagged"
+
+    let get y x (list: _ List2D) =
+        list[y][x]
+
+    let set y x value (list: _ List2D)=
+        list
+        |> List.mapi (fun idxY row ->
+            if idxY = y then
+                row
+                |> List.mapi (fun idxX valX -> if idxX = x then value else valX)
+            else
+                row)
+
+    let findIndex predicate (list: _ List2D) =
+        let y = List.findIndex (List.exists predicate) list
+        let x = List.findIndex predicate list[y]
+        y, x
+
+    let lengthY (list: _ List2D) =
+        List.length list
+
+    let lengthX (list: _ List2D) =
+        List.length list[0]
+
+    let mapi f =
+        List.mapi (fun y row -> List.mapi (fun x value -> f y x value) row)
+
+    let choose f =
+        List.collect (List.choose f)
+
+    let log (formatter: _ -> string) (list: _ List2D) =
+        List.map (List.map formatter >> String.concat "") list
+        |> List.iter log
