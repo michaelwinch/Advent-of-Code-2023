@@ -9,10 +9,15 @@ type Move =
     | Left
     | Up
 
-
 type Array2D<'a> = private Array2D of 'a array array
 
 module Array2D =
+    let init yLength xLength initialiser =
+        [ 0 .. yLength - 1 ]
+        |> List.map (fun y -> Array.init xLength (initialiser y))
+        |> List.toArray
+        |> Array2D
+
     let create (x: _ array array) =
         if x.Length = 0 || x |> Array.forall (_.Length >> (=) x[0].Length) then
             Array2D x
@@ -22,10 +27,23 @@ module Array2D =
     let get y x (Array2D array) =
         array[y][x]
 
+    let set  (Array2D array) y x value =
+        Array.set array[y] x value
+
     let find predicate (Array2D array) =
         let y = Array.findIndex (Array.exists predicate) array
         let x = Array.findIndex predicate array[y]
         y, x
+
+    let lengthY (Array2D array) =
+        array.Length
+
+    let lengthX (Array2D array) =
+        array[0].Length
+
+    let log (formatter: _ -> string) (Array2D array) =
+        Array.map (Array.map formatter >> String.concat "") array
+        |> Array.iter (printfn "%s")
             
 
 let getInput inputFile =
@@ -76,7 +94,7 @@ let getNextMove (currentMove, (y, x)) currentValue =
 
     newMove, newCoords
 
-let traverse (map: char Array2D) =
+let getLoopLength (map: char Array2D) =
     let start = map |> Array2D.find ((=) 'S')
     let firstMove = getFirstMove start map
     
@@ -90,14 +108,78 @@ let traverse (map: char Array2D) =
             let nextMove = getNextMove currentAction currentValue
             loop moves nextMove
 
-    let loopLength = loop 0 firstMove
-    loopLength / 2
+    loop 0 firstMove
 
 
 module Part1 =
     let run inputFile =
         getInput inputFile
-        |> traverse
+        |> getLoopLength
+        |> fun x -> x / 2
 
 
-Solution.run "pt1" Part1.run "Inputs/Actual/Day10.txt" // pt1 completed in 2ms with result: 6613
+module Part2 =
+    let getPipeLoopMap map =
+        let pipeLoopMap = Array2D.init (Array2D.lengthY map) (Array2D.lengthX map) (fun _ _ -> false)
+
+        let start = map |> Array2D.find ((=) 'S')
+
+        let firstMove = getFirstMove start map
+    
+        let rec loop (_, (y, x) as currentAction) =
+            Array2D.set pipeLoopMap y x true
+            let currentValue = Array2D.get y x map
+
+            if currentValue = 'S' then
+                ()
+            else
+                let nextMove = getNextMove currentAction currentValue
+                loop nextMove
+
+        loop firstMove
+
+        pipeLoopMap
+
+    let getSurroundingMoves (starty, startx) map =
+        [ if startx + 1 <> Array2D.lengthX map then
+              yield Right, starty, (startx + 1)
+
+          if starty + 1 <> Array2D.lengthY map then
+              yield Down, (starty + 1), startx
+
+          if startx <> 0 then
+              yield Left, starty, (startx - 1)
+
+          if starty <> 0 then
+              yield Up, (starty - 1), startx ]
+        |> List.map (fun (move, y, x) -> move, (y, x))
+
+    let floodFill pipeMap =
+        let floodMap = Array2D.init (Array2D.lengthY pipeMap) (Array2D.lengthX pipeMap) (fun _ _ -> None)
+
+        let rec loop isInsideLoop lastValuePipe (y, x) =
+            let isCurrentPipe = Array2D.get y x pipeMap
+            let surroundingLocations = getSurroundingMoves (y, x) pipeMap
+            Array2D.set floodMap y x (Some (isInsideLoop && not isCurrentPipe))
+            surroundingLocations
+            |> List.filter (fun (_, (y, x)) -> Array2D.get y x floodMap |> Option.isNone)
+            |> List.iter (snd >> loop (if lastValuePipe && isCurrentPipe then not isInsideLoop else isInsideLoop) isCurrentPipe)
+
+        loop false false (0, 0)
+
+        floodMap
+        //|> Array2D.log (function None -> "X" | Some true -> "o" | Some false -> "-")
+
+    let run inputFile =
+        getInput inputFile
+        |> getPipeLoopMap
+        |> tee (Array2D.log (function true -> "*" | false -> "."))
+        |> floodFill
+        |> tee (Array2D.log (function None -> "X" | Some true -> "o" | Some false -> "-"))
+
+
+//Solution.run "pt1" Part1.run "Inputs/Actual/Day10.txt" // pt1 completed in 2ms with result: 6613
+
+Part2.run "Inputs/Examples/Day10_1_2.txt"
+//|> Array2D.log (function true -> "*" | false -> ".")
+//|> printfn "%A"
